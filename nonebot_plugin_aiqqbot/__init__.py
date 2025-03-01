@@ -16,11 +16,11 @@ from nonebot.rule import Rule
 from nonebot.typing import T_State
 from nonebot.log import logger
 from typing import Dict
-from .config import Config
+from .config import PRESETS_LOCATION, OPENAI_API_KEY, OPENAI_ENDPOINT, GPT_MODEL, MAX_TOKENS, Config
 
 # 插件元数据
 __plugin_meta__ = PluginMetadata(
-    name="aibot",
+    name="aiqqbot",
     description="A plugin that can recognize pictures and reply to chats with AI",
     usage="Send a picture or message",
     type="application",
@@ -29,10 +29,9 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={"~onebot.v11"}
 )
 
-config = get_plugin_config(Config)
 # 初始化 OpenAI API
-openai.api_key = config.openai_api_key
-openai.api_base = config.openai_endpoint
+openai.api_key = OPENAI_API_KEY
+openai.api_base = OPENAI_ENDPOINT
 
 # 初始化 session 存储
 sessions = {}
@@ -40,15 +39,16 @@ sessions = {}
 # 读取预设
 def read_presets_txt(preset_name):
     if preset_name != "default":
-        file_name = Presets_name.get_preset_name(preset_name)
-        if file_name == "default":
-            return ""
-        file_path = "./plugins/aibot/presets/" + file_name + ".txt"
+        file_path = PRESETS_LOCATION + preset_name + ".txt"
     else:
-        file_path = "./plugins/aibot/presets/default.txt"
-    logger.info(f"加载文件名 {file_path}")
-    with open(file_path, 'r', encoding='utf-8') as file:
-        lines = file.readlines()
+        file_path = PRESETS_LOCATION + "default.txt"
+    # logger.info(f"加载文件名 {file_path}")
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+    except FileNotFoundError as e:
+        logger.info(f"没有这个预设哦")
+        return ""
     file_content = ""
     for line in lines:
         if line.strip():
@@ -105,7 +105,7 @@ async def handle_message(bot: Bot, event: MessageEvent, session_id: str, presets
             if reply:
                 await bot.send(event, reply)
             else: 
-                await bot.send(event, f"上文内容太多，我记不过来了，需要“重置会话”哦qvq")
+                await bot.send(event, f"出错了，请尝试“重置会话”哦qvq")
         except Exception as e:
             logger.error(f"OpenAI API 请求失败: {e}")
             await bot.send(event, "目前无法回复您的问题。")
@@ -122,12 +122,12 @@ async def chat_openai(session_id: str) -> str:
         else:
             selected_messages = [sessions[session_id]["messages"][-1]]
         
-        logger.info(selected_messages)
+        # logger.info(selected_messages)
         response = openai.ChatCompletion.create(
-            model=config.GPT_MODEL,
+            model=GPT_MODEL,
             messages=selected_messages,
             session_id=session_id,
-            max_tokens=config.MAX_TOKEN
+            max_tokens=MAX_TOKENS
         )
         reply = response['choices'][0]["message"]['content']
         sessions[session_id]["messages"].append({"role": "assistant", "content": reply})
@@ -142,7 +142,7 @@ async def analyze_image(image_url: str, question: str, session_id: str) -> str:
 
         # 调用API处理图像
         response = openai.ChatCompletion.create(
-            model=config.GPT_MODEL,
+            model=GPT_MODEL,
             messages=[
                 {
                     "role": "user",
@@ -158,7 +158,7 @@ async def analyze_image(image_url: str, question: str, session_id: str) -> str:
                                  }
             ],
             session_id=session_id,
-            max_tokens=config.MAX_TOKEN
+            max_tokens=MAX_TOKENS
         )
         reply = response.choices[0].message['content']
         sessions[session_id]["messages"].append({"role": "user", "content": [
@@ -228,19 +228,6 @@ async def enable_memory(session_id):
     sessions[session_id] = {"messages": [], "contextual_memory": True, "start_time": time.time()}
     sessions[session_id]["messages"].append(read_presets_txt("default"))
 
-class Presets_name:
-    # 使用中文名称映射到英文预设名
-    preset_mapping: Dict[str, str] = {
-        "猫娘": "catgirl",
-        "夸夸": "kua",
-        "默认": "default",
-        "女友": "nvyou"
-    }
-    @classmethod
-    def get_preset_name(cls, chinese_name: str) -> str:
-        # 通过中文名称获取英文预设名，如果不存在返回默认提示
-        return cls.preset_mapping.get(chinese_name, "default")
-
 # 加载预设
 handle_presets_private_session = on_command("加载预设", rule=is_private_message(), priority=5, block=True)
 
@@ -249,7 +236,7 @@ async def handle_preset_private_receive(bot: Bot, event: PrivateMessageEvent, ar
     # 获取命令的参数
     presets = args.extract_plain_text().strip()
     user_id = str(event.user_id)
-    presets_content = Presets_name.read_presets_txt(presets)
+    presets_content = read_presets_txt(presets)
     if not presets_content:
         await bot.send(event, f"预设加载失败, 请确定预设名称是否正确!")
         return
@@ -272,7 +259,7 @@ async def handle_preset_group_receive(bot: Bot, event: GroupMessageEvent, args: 
     presets = args.extract_plain_text().strip() 
     if event.is_tome():
         group_id = str(event.group_id)
-        presets_content = Presets_name.read_presets_txt(presets)
+        presets_content = read_presets_txt(presets)
         if not presets_content:
             await bot.send(event, f"预设加载失败, 请确定预设名称是否正确!")
             return

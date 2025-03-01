@@ -9,7 +9,7 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
 ## 💿 安装
 
 <details open>
-<summary>使用 nb-cli 安装</summary>
+<summary>使用 nb-cli 安装(未实现)</summary>
 在 nonebot2 项目的根目录下打开命令行, 输入以下指令即可安装
 
     nb plugin install nonebot-plugin-aiqqbot
@@ -23,29 +23,35 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
 <details>
 <summary>pip</summary>
 
-    pip install nonebot-plugin-aibot
+    pip install nonebot-plugin-aiqqbot
 </details>
 
 打开 nonebot2 项目根目录下的 `pyproject.toml` 文件, 在 `[tool.nonebot]` 部分追加写入
 
-    plugins = ["nonebot_plugin_aibot"]
+    plugins = ["nonebot_plugin_aiqqbot"]
 
 </details>
 
 ## ⚙️ 配置
 
-在 nonebot2 项目的`.env`文件中添加下表中的必填配置
+在 nonebot2 项目的`.env.prod`文件中添加下表中的必填配置
 
 | 配置项 | 必填 | 默认值 | 说明 |
 |:-----:|:----:|:----:|:----:|
-| openai_api_key | 是 | 无 | API密钥 |
-| openai_endpoint | 是 | 无 | API服务端点 |
+| OPENAI_API_KEY | 是 | 无 | API密钥 |
+| OPENAI_ENDPOINT | 是 | 无 | API服务端点 |
 | GPT_MODEL | 是 | 无 | 调用的GPT模型 |
-| MAX_TOKEN | 是 | 2048 | 回复的最大token |
+| MAX_TOKENS | 否 | 2048 | 回复的最大token |
+| PRESETS_LOCATION| 否 | ./presets/ | 请在bot.py目录下创建该文件夹 |
 
 ## 🎉 使用
 ### 指令表
 | 指令 |  需要@ | 范围 | 说明 |
 |:-----:|:----:|:----:|:----:|
 | 重置会话 | 是 | 群聊/私聊 | 清楚会话记忆，恢复初始预设 |
-| 加载预设 | 是 | 群聊/私聊 | 加载设定，目前有猫娘，女友，夸夸 |
+| 加载预设 | 是 | 群聊/私聊 | 加载设定，目前有catgirl，nvyou, kua，default|
+
+请使用前在nonebot机器人bot.py目录下建立presets文件夹，预设导入
++ 从github仓库下载
++ 自行创建预设名
+
