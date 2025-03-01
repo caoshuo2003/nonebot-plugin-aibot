@@ -42,7 +42,7 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
 | OPENAI_ENDPOINT | 是 | 无 | API服务端点 |
 | GPT_MODEL | 是 | 无 | 调用的GPT模型 |
 | MAX_TOKENS | 否 | 2048 | 回复的最大token |
-| PRESETS_LOCATION| 否 | ./presets/ | 请在bot.py目录下创建该文件夹 |
+| PRESETS_LOCATION| 否 | ./presets/ | 默认情况请在bot.py目录下创建presets文件夹 |
 
 ## 🎉 使用
 ### 指令表
