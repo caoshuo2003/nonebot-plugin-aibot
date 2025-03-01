@@ -12,7 +12,6 @@ class Config(BaseModel):
 plugin_config: Config = get_plugin_config(Config)
 
 OPENAI_API_KEY = plugin_config.openai_api_key
-print(OPENAI_API_KEY)
 OPENAI_ENDPOINT = plugin_config.openai_endpoint
 GPT_MODEL = plugin_config.gpt_model
 MAX_TOKENS = plugin_config.max_tokens
