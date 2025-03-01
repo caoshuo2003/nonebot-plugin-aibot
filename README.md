@@ -51,7 +51,8 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
 | 重置会话 | 是 | 群聊/私聊 | 清楚会话记忆，恢复初始预设 |
 | 加载预设 | 是 | 群聊/私聊 | 加载设定，目前有catgirl，nvyou, kua，default|
 
-请使用前在nonebot机器人bot.py目录下建立presets文件夹，预设导入
+请使用前在nonebot机器人bot.py目录下建立presets文件夹，必须有default预设！！！重置会话会加载default预设。
+其他预设来源:
 + 从github仓库下载
 + 自行创建预设名
 
