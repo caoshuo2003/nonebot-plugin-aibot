@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "nonebot-plugin-aibot"
+version = "0.1.0"
+description = "A NoneBot plugin for AI bot"
+authors = ["caoshuo2003 <caoshuo2003@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+nonebot2 = "^2.4.1"
+asyncio = "^3.4.3"
+aiocron = "^2.0"
+nonebot-adapter-onebot = "^2.0"
+openai = "^0.27"
+requests = "^2.28"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
