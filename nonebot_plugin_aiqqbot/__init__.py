@@ -24,7 +24,7 @@ __plugin_meta__ = PluginMetadata(
     description="A plugin that can recognize pictures and reply to chats with AI",
     usage="Send a picture or message",
     type="application",
-    homepage="https://github.com/caoshuo2003/nonebot-plugin-aibot",
+    homepage="https://github.com/caoshuo2003/nonebot-plugin-aiqqbot",
     config=Config,
     supported_adapters={"~onebot.v11"}
 )
