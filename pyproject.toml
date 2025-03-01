@@ -1,9 +1,12 @@
 [tool.poetry]
-name = "nonebot-plugin-aibot"
+name = "nonebot-plugin-aiqqbot"
 version = "0.1.0"
 description = "A NoneBot plugin for AI bot"
 authors = ["caoshuo2003 <caoshuo2003@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "nonebot_plugin_aiqqbot", from = "." },
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

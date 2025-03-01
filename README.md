@@ -1,70 +1,10 @@
-<div align="center">
-  <a href="https://v2.nonebot.dev/store"><img src="https://github.com/A-kirami/nonebot-plugin-template/blob/resources/nbp_logo.png" width="180" height="180" alt="NoneBotPluginLogo"></a>
-  <br>
-  <p><img src="https://github.com/A-kirami/nonebot-plugin-template/blob/resources/NoneBotPlugin.svg" width="240" alt="NoneBotPluginText"></p>
-</div>
+# nonebot-plugin-aiqqbot
 
-<div align="center">
-
-# nonebot-plugin-aibot
-
-_✨ NoneBot 插件简单描述 ✨_
-
-
-<a href="./LICENSE">
-    <img src="https://img.shields.io/github/license/owner/nonebot-plugin-aibot.svg" alt="license">
-</a>
-<a href="https://pypi.python.org/pypi/nonebot-plugin-aibot">
-    <img src="https://img.shields.io/pypi/v/nonebot-plugin-aibot.svg" alt="pypi">
-</a>
-<img src="https://img.shields.io/badge/python-3.9+-blue.svg" alt="python">
-
-</div>
-
-这是一个 nonebot2 插件项目的模板库, 你可以直接使用本模板创建你的 nonebot2 插件项目的仓库
-
-<details open>
-<summary>模板库使用方法</summary>
-
-1. 点击 [![start-course](https://user-images.githubusercontent.com/1221423/235727646-4a590299-ffe5-480d-8cd5-8194ea184546.svg)](https://github.com/new?aibot_owner=A-kirami&aibot_name=nonebot-plugin-aibot&owner=%40me&name=nonebot-plugin-&visibility=public) 创建仓库
-2. 在创建好的新仓库中, 在 "Add file" 菜单中选择 "Create new file", 在新文件名处输入`LICENSE`, 此时在右侧会出现一个 "Choose a license aibot" 按钮, 点击此按钮选择开源协议模板, 然后在最下方提交新文件到主分支
-3. 全局替换`owner`为仓库所有者ID; 全局替换`nonebot-plugin-aibot`为插件名; 全局替换`nonebot_plugin_aibot`为包名; 修改 python 徽标中的版本为你插件的运行所需版本
-4. 修改 README 中的插件名和插件描述, 并在下方填充相应的内容
-
-</details>
-
-> [!NOTE]
-> 模板库中自带了一个发布工作流, 你可以使用此工作流自动发布你的插件到 pypi
-
-<details>
-<summary>配置发布工作流</summary>
-
-1. 前往 https://pypi.org/manage/account/#api-tokens 并创建一个新的 API 令牌。创建成功后不要关闭页面，不然你将无法再次查看此令牌。
-2. 在单独的浏览器选项卡或窗口中，打开 [Actions secrets and variables](./settings/secrets/actions) 页面。你也可以在 Settings - Secrets and variables - Actions 中找到此页面。
-3. 点击 New repository secret 按钮，创建一个名为 `PYPI_API_TOKEN` 的新令牌，并从第一步复制粘贴令牌。
-
-</details>
-
-> [!IMPORTANT]
-> 这个发布工作流需要 pyproject.toml 文件, 并且只支持 [PEP 621](https://peps.python.org/pep-0621/) 标准的 pyproject.toml 文件
-
-<details>
-<summary>触发发布工作流</summary>
-从本地推送任意 tag 即可触发。
-
-创建 tag:
-
-    git tag <tag_name>
-
-推送本地所有 tag:
-
-    git push origin --tags
-
-</details>
+_✨ QQ中可以读图的聊天的机器人 ✨_
 
 ## 📖 介绍
 
-这里是插件的详细介绍部分
+由于手机qq发送图片时不可携带消息，所以这里可以先发送图片，AI处理后回复“已收到”，然后可以继续聊天对话。
 
 ## 💿 安装
 
@@ -72,7 +12,7 @@ _✨ NoneBot 插件简单描述 ✨_
 <summary>使用 nb-cli 安装</summary>
 在 nonebot2 项目的根目录下打开命令行, 输入以下指令即可安装
 
-    nb plugin install nonebot-plugin-aibot
+    nb plugin install nonebot-plugin-aiqqbot
 
 </details>
 
@@ -84,21 +24,6 @@ _✨ NoneBot 插件简单描述 ✨_
 <summary>pip</summary>
 
     pip install nonebot-plugin-aibot
-</details>
-<details>
-<summary>pdm</summary>
-
-    pdm add nonebot-plugin-aibot
-</details>
-<details>
-<summary>poetry</summary>
-
-    poetry add nonebot-plugin-aibot
-</details>
-<details>
-<summary>conda</summary>
-
-    conda install nonebot-plugin-aibot
 </details>
 
 打开 nonebot2 项目根目录下的 `pyproject.toml` 文件, 在 `[tool.nonebot]` 部分追加写入
@@ -113,14 +38,14 @@ _✨ NoneBot 插件简单描述 ✨_
 
 | 配置项 | 必填 | 默认值 | 说明 |
 |:-----:|:----:|:----:|:----:|
-| 配置项1 | 是 | 无 | 配置说明 |
-| 配置项2 | 否 | 无 | 配置说明 |
+| openai_api_key | 是 | 无 | API密钥 |
+| openai_endpoint | 是 | 无 | API服务端点 |
+| GPT_MODEL | 是 | 无 | 调用的GPT模型 |
+| MAX_TOKEN | 是 | 2048 | 回复的最大token |
 
 ## 🎉 使用
 ### 指令表
-| 指令 | 权限 | 需要@ | 范围 | 说明 |
-|:-----:|:----:|:----:|:----:|:----:|
-| 指令1 | 主人 | 否 | 私聊 | 指令说明 |
-| 指令2 | 群员 | 是 | 群聊 | 指令说明 |
-### 效果图
-如果有效果图的话
+| 指令 |  需要@ | 范围 | 说明 |
+|:-----:|:----:|:----:|:----:|
+| 重置会话 | 是 | 群聊/私聊 | 清楚会话记忆，恢复初始预设 |
+| 加载预设 | 是 | 群聊/私聊 | 加载设定，目前有猫娘，女友，夸夸 |
