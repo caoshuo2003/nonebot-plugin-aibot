@@ -2,12 +2,13 @@ import asyncio
 import aiocron
 import io
 import os
-import openai
-import requests
 import socket
 import base64
 import time
+import httpx
+import json
 
+from openai import OpenAI
 from nonebot import get_plugin_config, on_command, on_message, get_driver, get_bot
 from nonebot.plugin import PluginMetadata
 from nonebot.adapters.onebot.v11 import Bot, MessageEvent, Message, PrivateMessageEvent, GroupMessageEvent
@@ -16,7 +17,11 @@ from nonebot.rule import Rule
 from nonebot.typing import T_State
 from nonebot.log import logger
 from typing import Dict
-from .config import PRESETS_LOCATION, OPENAI_API_KEY, OPENAI_ENDPOINT, GPT_MODEL, MAX_TOKENS, Config
+from .config import Config, DEFAULT_CONFIG
+from pathlib import Path
+from nonebot import require
+require("nonebot_plugin_localstore")
+import nonebot_plugin_localstore as store
 
 # 插件元数据
 __plugin_meta__ = PluginMetadata(
@@ -28,10 +33,56 @@ __plugin_meta__ = PluginMetadata(
     config=Config,
     supported_adapters={"~onebot.v11"}
 )
+driver = get_driver()
+CONFIG_FILE = None
+plugin_data_dir = None
 
+# 初始化全局配置变量为空，后续在启动时赋值
+plugin_config: Config = None
+OPENAI_API_KEY = None
+OPENAI_ENDPOINT = None
+GPT_MODEL = None
+MAX_TOKENS = None
+PRESETS_LOCATION = None
+client = None 
+
+async def init_config_file() -> None:
+    global CONFIG_FILE, plugin_data_dir
+    logger.info("初始化ing")
+    await asyncio.sleep(3)
+    if CONFIG_FILE is None:
+        CONFIG_FILE = store.get_plugin_config_file("aiqqbot_plugin_config.json")
+        plugin_data_dir = store.get_plugin_data_dir()
+    if not CONFIG_FILE.exists():
+        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_FILE.write_text(json.dumps(DEFAULT_CONFIG, indent=4, ensure_ascii=False))
+        logger.info(f"配置文件已生成: {CONFIG_FILE}")
+    else:
+        logger.info(f"配置文件已存在: {CONFIG_FILE}")
+
+def load_config() -> Config:
+    config_data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+    return Config(**config_data)
+
+@driver.on_startup
+async def startup() -> None:
+    global client, plugin_config, OPENAI_API_KEY, OPENAI_ENDPOINT, GPT_MODEL, MAX_TOKENS, PRESETS_LOCATION
+    # 延迟初始化配置文件，确保插件上下文已正确设置
+    await init_config_file()
+    plugin_config = load_config()
+    OPENAI_API_KEY = plugin_config.openai_api_key
+    OPENAI_ENDPOINT = plugin_config.openai_endpoint
+    GPT_MODEL = plugin_config.gpt_model
+    MAX_TOKENS = plugin_config.max_tokens
+    PRESETS_LOCATION = plugin_data_dir + "presets/"
+    client = OpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url=OPENAI_ENDPOINT
+    )
+    logger.info("插件启动完成，OpenAI 客户端已初始化。")
 # 初始化 OpenAI API
-openai.api_key = OPENAI_API_KEY
-openai.api_base = OPENAI_ENDPOINT
+# openai.api_key = OPENAI_API_KEY
+# openai.api_base = OPENAI_ENDPOINT
 
 # 初始化 session 存储
 sessions = {}
@@ -88,6 +139,7 @@ async def handle_group_message(bot: Bot, event: GroupMessageEvent, presets="defa
         await handle_message(bot, event, group_id, presets)
 
 async def handle_message(bot: Bot, event: MessageEvent, session_id: str, presets: str):
+    clean_expired_sessions()
     if session_id not in sessions:
         sessions[session_id] = {"messages": [], "contextual_memory": True, "start_time": time.time(), "presets": presets}
         sessions[session_id]["messages"].append(read_presets_txt(presets))
@@ -113,8 +165,8 @@ async def handle_message(bot: Bot, event: MessageEvent, session_id: str, presets
 async def chat_openai(session_id: str) -> str:
     try:
         contextual_memory = sessions[session_id]["contextual_memory"]
-        logger.info(f"contextual_memory: {contextual_memory}")
-        logger.info(f"session_id: {session_id}")
+        # logger.info(f"contextual_memory: {contextual_memory}")
+        # logger.info(f"session_id: {session_id}")
         if contextual_memory:
             selected_messages = sessions[session_id]["messages"]
             #if not check_max_tokens(selected_messages, 4096):
@@ -123,13 +175,12 @@ async def chat_openai(session_id: str) -> str:
             selected_messages = [sessions[session_id]["messages"][-1]]
         
         # logger.info(selected_messages)
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=GPT_MODEL,
             messages=selected_messages,
-            session_id=session_id,
             max_tokens=MAX_TOKENS
         )
-        reply = response['choices'][0]["message"]['content']
+        reply = response.choices[0].message.content
         sessions[session_id]["messages"].append({"role": "assistant", "content": reply})
         return reply
     except Exception as e:
@@ -141,7 +192,7 @@ async def analyze_image(image_url: str, question: str, session_id: str) -> str:
         base64_image =  await encode_image(image_url)
 
         # 调用API处理图像
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=GPT_MODEL,
             messages=[
                 {
@@ -157,10 +208,10 @@ async def analyze_image(image_url: str, question: str, session_id: str) -> str:
                     ],
                                  }
             ],
-            session_id=session_id,
             max_tokens=MAX_TOKENS
         )
-        reply = response.choices[0].message['content']
+        reply = response.choices[0].message.content
+        # reply = response.choices[0].message['content']
         sessions[session_id]["messages"].append({"role": "user", "content": [
                         {
                             "type": "image_url",
@@ -183,24 +234,22 @@ async def encode_image(image_url):
             except Exception as e:
                 logger.warning(f"Error downloading {image_url}, retry {i}/3: {e}")
                 await asyncio.sleep(3)
+# 重置会话
+handle_clear_session = on_command("重置会话", priority=5, block=True)
 
-# 清除会话
-handle_clear_private_session = on_command("重置会话", rule=is_private_message(), priority=5, block=True)
-
-@handle_clear_private_session.handle()
-async def clear_private_session(bot: Bot, event: PrivateMessageEvent):
-    user_id = str(event.user_id)
-    await clear_session(user_id)
-    await bot.send(event, "私聊会话清除。")
-
-# 清除会话
-handle_clear_group_session = on_command("重置会话", rule=is_group_message(), priority=5, block=True)
-
-@handle_clear_group_session.handle()
-async def clear_group_session(bot: Bot, event: GroupMessageEvent):
-    group_id = str(event.group_id)
-    await clear_session(group_id)
-    await bot.send(event, "群聊会话清除。")
+@handle_clear_session.handle()
+async def clear_session_handler(bot: Bot, event: PrivateMessageEvent | GroupMessageEvent):
+    # 根据事件类型选择对应的标识符
+    if isinstance(event, PrivateMessageEvent):
+        identifier = str(event.user_id)
+        session_type = "私聊"
+    elif isinstance(event, GroupMessageEvent):
+        identifier = str(event.group_id)
+        session_type = "群聊"
+    else:
+        return
+    await clear_session(identifier)
+    await bot.send(event, f"{session_type}会话清除。")
 
 async def clear_session(session_id: str):
     if session_id in sessions:
@@ -222,26 +271,31 @@ async def enable_group_memory(bot: Bot, event: GroupMessageEvent):
     group_id = str(event.group_id)
     await enable_memory(group_id)
     await bot.send(event, "Group记忆开启。")
-'''
+
 
 async def enable_memory(session_id):
     sessions[session_id] = {"messages": [], "contextual_memory": True, "start_time": time.time()}
     sessions[session_id]["messages"].append(read_presets_txt("default"))
-
+'''
 # 加载预设
-handle_presets_private_session = on_command("加载预设", rule=is_private_message(), priority=5, block=True)
+handle_presets_session = on_command("加载预设", priority=5, block=True)
 
-@handle_presets_private_session.handle()
+@handle_presets_session.handle()
 async def handle_preset_private_receive(bot: Bot, event: PrivateMessageEvent, args: Message = CommandArg()):
     # 获取命令的参数
     presets = args.extract_plain_text().strip()
-    user_id = str(event.user_id)
+    if isinstance(event, PrivateMessageEvent):
+        identifier = str(event.user_id)
+        session_type = "私聊"
+    elif isinstance(event, GroupMessageEvent):
+        identifier = str(event.group_id)
+        session_type = "群聊"
     presets_content = read_presets_txt(presets)
     if not presets_content:
         await bot.send(event, f"预设加载失败, 请确定预设名称是否正确!")
         return
     
-    if user_id not in sessions:
+    if identifier not in sessions:
         sessions[user_id] = {"messages": [], "contextual_memory": True, "start_time": time.time(), "presets": presets}
         sessions[user_id]["messages"].append(presets_content)
     else:
@@ -250,26 +304,3 @@ async def handle_preset_private_receive(bot: Bot, event: PrivateMessageEvent, ar
         sessions[user_id]["messages"].append(presets_content)
     await bot.send(event, f"预设加载成功!")
             
-# 加载预设
-handle_presets_group_session = on_command("加载预设", rule=is_group_message(), priority=5, block=True)
-
-@handle_presets_group_session.handle()
-async def handle_preset_group_receive(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
-    # 获取命令的参数
-    presets = args.extract_plain_text().strip() 
-    if event.is_tome():
-        group_id = str(event.group_id)
-        presets_content = read_presets_txt(presets)
-        if not presets_content:
-            await bot.send(event, f"预设加载失败, 请确定预设名称是否正确!")
-            return
-
-        if group_id not in sessions:
-            sessions[group_id] = {"messages": [], "contextual_memory": True, "start_time": time.time(), "presets": presets}
-            sessions[group_id]["messages"].append(presets_content)
-        else:
-            sessions[group_id]["messages"] = []
-            sessions[group_id]["contextual_memory"] = True
-            sessions[group_id]["messages"].append(presets_content)
-        await bot.send(event, f"预设加载成功!")
-
