@@ -26,11 +26,13 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
     pip install nonebot-plugin-aiqqbot
 </details>
 
-打开 nonebot2 项目根目录下的 `pyproject.toml` 文件, 在 `[tool.nonebot]` 部分追加写入
+打开 nonebot2 项目根目录下的 `pyproject.toml` 文件, 在 `[tool.nonebot]` 部分追加写入（也记得在bot.py中加载pyproject.toml文件）
 
     plugins = ["nonebot_plugin_aiqqbot"]
 
 </details>
+
+经测试，httpx版本==0.27.x时可正常访问图片，==0.28.x时不可正常访问
 
 ## ⚙️ 配置
 
@@ -42,14 +44,22 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
 | OPENAI_ENDPOINT | 是 | 无 | API服务端点 |
 | GPT_MODEL | 是 | 无 | 调用的GPT模型 |
 | MAX_TOKENS | 否 | 2048 | 回复的最大token |
-| PRESETS_LOCATION| 否 | ./presets/ | 默认情况请在bot.py目录下创建presets文件夹 |
+
+```
+{
+    "openai_api_key": "xxxx",
+    "openai_endpoint": "https://xxxxxx",
+    "gpt_model": "gpt-4o-2024-11-20",
+    "max_tokens": 2048
+}
+```
 
 ## 🎉 使用
 ### 指令表
 | 指令 |  需要@ | 范围 | 说明 |
 |:-----:|:----:|:----:|:----:|
 | 重置会话 | 是 | 群聊/私聊 | 清楚会话记忆，恢复初始预设 |
-| 加载预设 | 是 | 群聊/私聊 | 加载设定，目前有catgirl，nvyou, kua，default|
+| 加载预设 | 是 | 群聊/私聊 | 加载设定，目前有catgirl，nvyou, kua，default，可自行更改|
 
 请使用前查询localstore并在data.dir建立presets文件夹，必须有default预设！！！重置会话会加载default预设。
 其他预设来源:

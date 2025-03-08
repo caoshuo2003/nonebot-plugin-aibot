@@ -25,7 +25,7 @@ import nonebot_plugin_localstore as store
 
 # 插件元数据
 __plugin_meta__ = PluginMetadata(
-    name="aiqqbot",
+    name="nonebot_plugin_aiqqbot",
     description="A plugin that can recognize pictures and reply to chats with AI",
     usage="Send a picture or message",
     type="application",
@@ -48,17 +48,19 @@ client = None
 
 async def init_config_file() -> None:
     global CONFIG_FILE, plugin_data_dir
-    logger.info("初始化ing")
-    await asyncio.sleep(3)
     if CONFIG_FILE is None:
         CONFIG_FILE = store.get_plugin_config_file("aiqqbot_plugin_config.json")
-        plugin_data_dir = store.get_plugin_data_dir()
     if not CONFIG_FILE.exists():
         CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
         CONFIG_FILE.write_text(json.dumps(DEFAULT_CONFIG, indent=4, ensure_ascii=False))
         logger.info(f"配置文件已生成: {CONFIG_FILE}")
     else:
         logger.info(f"配置文件已存在: {CONFIG_FILE}")
+    if plugin_data_dir is None:
+        plugin_data_dir = store.get_plugin_data_dir()
+    if not plugin_data_dir.exists():
+        logger.info(f"预设文件夹未存在: {plugin_data_dir}, 请在此创建presets文件夹")
+
 
 def load_config() -> Config:
     config_data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
@@ -74,15 +76,11 @@ async def startup() -> None:
     OPENAI_ENDPOINT = plugin_config.openai_endpoint
     GPT_MODEL = plugin_config.gpt_model
     MAX_TOKENS = plugin_config.max_tokens
-    PRESETS_LOCATION = plugin_data_dir + "presets/"
+    PRESETS_LOCATION = str(plugin_data_dir / "presets")
     client = OpenAI(
         api_key=OPENAI_API_KEY,
         base_url=OPENAI_ENDPOINT
     )
-    logger.info("插件启动完成，OpenAI 客户端已初始化。")
-# 初始化 OpenAI API
-# openai.api_key = OPENAI_API_KEY
-# openai.api_base = OPENAI_ENDPOINT
 
 # 初始化 session 存储
 sessions = {}
@@ -90,10 +88,10 @@ sessions = {}
 # 读取预设
 def read_presets_txt(preset_name):
     if preset_name != "default":
-        file_path = PRESETS_LOCATION + preset_name + ".txt"
+        file_path = PRESETS_LOCATION + "/" + preset_name + ".txt"
     else:
-        file_path = PRESETS_LOCATION + "default.txt"
-    # logger.info(f"加载文件名 {file_path}")
+        file_path = PRESETS_LOCATION + "/default.txt"
+    logger.info(f"加载文件名 {file_path}")
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             lines = file.readlines()
@@ -225,10 +223,10 @@ async def analyze_image(image_url: str, question: str, session_id: str) -> str:
         logger.error(f"Error analysing image: {e}")
 
 async def encode_image(image_url):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient() as aclient:
         for i in range(3):
             try:
-                resp = await client.get(image_url, timeout=20)
+                resp = await aclient.get(image_url, timeout=20)
                 resp.raise_for_status()
                 return base64.b64encode(resp.content).decode('utf-8')
             except Exception as e:

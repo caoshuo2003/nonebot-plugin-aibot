@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-aiqqbot"
-version = "0.1.7"
+version = "0.1.9"
 description = "A NoneBot plugin for AI bot"
 authors = ["caoshuo2003 <caoshuo2003@gmail.com>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ python = "^3.9"
 nonebot2 = "^2.4.1"
 aiocron = "^2.0"
 nonebot-adapter-onebot = "^2.0"
-httpx = "^0.28.1"
+httpx = "==0.27.1"
 openai = "^1.65.4"
 
 [build-system]
