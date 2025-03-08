@@ -36,7 +36,7 @@ _✨ QQ中可以读图的聊天的机器人 ✨_
 
 ## ⚙️ 配置
 
-使用localstore插件查看并填写下表中的必填配置
+使用localstore插件查看config path并创建aiqqbot_plugin_config.json文件填写下表中的必填配置
 
 | 配置项 | 必填 | 默认值 | 说明 |
 |:-----:|:----:|:----:|:----:|
